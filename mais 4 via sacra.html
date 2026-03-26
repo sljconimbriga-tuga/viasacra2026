@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Via Sacra 2026 - Vila Seca</title>
+    <style>
+        :root {
+            --bg-body: #1a1a1a;
+            --card-bg: #262626;
+            --gold: #fbbf24;
+            --violet: #8b5cf6;
+            --text-main: #ffffff;
+            --text-soft: #a3a3a3;
+        }
+        .oled-mode { --bg-body: #000000; --card-bg: #000000; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        html, body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-body); 
+            color: var(--text-main);
+            font-family: -apple-system, system-ui, sans-serif;
+            overflow: hidden; /* Bloqueia scroll global */
+        }
+
+        .screen { 
+            height: 100vh; 
+            width: 100vw;
+            display: none; 
+            padding: 1rem;
+            overflow-y: auto; /* Scroll apenas dentro do cartão */
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .screen.active { display: flex; flex-direction: column; }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 1.5rem; 
+            border-radius: 1.5rem; 
+            width: 100%; 
+            max-width: 600px; 
+            margin: auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+        }
+
+        /* Estilos do Logótipo (Coração e Cruz) */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .logo-image {
+            max-width: 120px; /* Redimensionado para mobile */
+            height: auto;
+            /* Filtro para inverter as cores do logótipo em ecrãs escuros */
+            filter: invert(1);
+        }
+        .oled-mode .logo-image { filter: invert(1); } /* Mantém a inversão no modo OLED */
+
+        .header-main { text-align: center; margin-bottom: 1.5rem; }
+        .main-title { color: var(--gold); font-size: 1.4rem; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .subtitle { font-size: 1.1rem; margin: 0.5rem 0; font-weight: bold; font-style: italic; }
+        .info-header { font-size: 0.9rem; color: var(--text-soft); line-height: 1.4; }
+
+        h1 { color: var(--gold); font-size: 1.2rem; text-align: center; margin: 1rem 0 0.5rem 0; border-top: 1px solid #444; padding-top: 1rem; text-transform: uppercase; }
+        h2 { font-size: 1.05rem; text-align: center; margin: 0 0 1rem 0; font-weight: bold; }
+
+        .role { font-weight: bold; color: var(--gold); }
+        .section-title { color: var(--violet); font-weight: bold; display: block; margin-top: 1rem; text-decoration: underline; }
+        
+        .text-block { text-align: justify; margin: 1rem 0; font-size: 1.05rem; line-height: 1.6; }
+        .prayer-section { background: rgba(139, 92, 246, 0.15); padding: 1rem; border-radius: 1rem; margin: 1rem 0; border: 1px solid var(--violet); }
+        .prayer-instruction { color: var(--gold); font-weight: bold; display: block; text-align: center; margin-bottom: 0.8rem; }
+        
+        .invocation-row { display: flex; justify-content: space-between; margin-bottom: 0.8rem; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+        .invocation-text { flex: 1; }
+        .response { color: var(--gold); font-weight: bold; font-style: italic; text-align: right; min-width: 100px; }
+
+        .chant { background: rgba(251, 191, 36, 0.1); border: 1px dashed var(--gold); padding: 0.8rem; border-radius: 0.8rem; margin: 1rem 0; text-align: center; font-style: italic; font-size: 0.95rem; }
+
+        .nav-footer { display: flex; gap: 10px; margin-top: 1.5rem; padding-bottom: 2rem; }
+        .btn { flex: 1; padding: 1rem; border-radius: 12px; border: none; font-weight: bold; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; color: white; text-align: center; text-decoration: none; }
+        .btn-prev { background: #444; }
+        .btn-next { background: var(--violet); }
+
+        #mode-toggle { position: fixed; top: 10px; right: 10px; z-index: 9999; background: var(--gold); color: black; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 0.7rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+
+    <button id="mode-toggle">MODO OLED</button>
+
+<section class="screen active" id="intro">
+        <div class="card">
+            
+
+
+            <div class="header-main">
+                <div class="main-title">Via Sacra – UP Conimbriga</div>
+                <div class="subtitle">«EM ORAÇÃO COM JESUS, NO CAMINHO DA CRUZ»</div>
+                <div class="info-header">
+                    Igreja de Vila Seca<br>
+                    28 de Março de 2026<br>
+                    Presidida pelo nosso Pároco João Paulo Fernandes
+                </div>
+            </div>
+           
+            <div class="logo-container">
+                <img src="url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAAEYCAYAAACHjumMAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAACesSURBVHhe7Z0HuBTV+YeTv1ETEzWW2BUVFUUsKFUliAaxUwQVG4q9oFgQgxKCYrCiBGvsWBIEu4Ci2CEaW4yIjSjGFjUqIYg0mf/zHuZbz927F7m7c3Zndn/v83zPhZ25u3N3z/z2nO985UeREEIEQgIjhAiGBEYIEQwJjBAiGBIYIUQwJDBCiGBIYIQQwZDACCGCIYERQgRDAiOECIYERggRDAmMECIYEhghRDAkMEKIYEhghBDBkMAIIYIhgRFCBEMCI4QIhgRGCBEMCYwQIhgSGCFEMCQwQohgSGCEEMGQwAghgiGBEUIEQwIjhAiGBEYIEQwJjBAiGBIYIUQwJDBCiGBIYIQQwZDACCGCIYERQgRDAiOECIYERggRDAmMECIYEhghRDAkMEKIYEhghBDBkMAIIYIhgRFCBEMCI4QIhgRGCBEMCYwQIhgSGCFEMCQwQohgSGCEEMGQwAghgiGBEUIEQwIjhAiGBEYIEQwJjCgrixcvrmffffddzhYtWpSzhQsXRgsWLMjZ/Pnznc2bNy9n3377rbO5c+dG33zzTR2bM2eO+z1ROSQwIgjvv/9+dP3110d9+/aNunTpEu26665Rhw4dCtrOO+8c7bTTTlH79u2jtm3bOmvXrp372aZNG2etWrXK2Q477JCz7bbbLtp+++2dbbvttnWsRYsWUevWraPevXu7a/n444/jqxPlQgIjEuXrr7+OBg0aFK299trRj370o1RZkyZNohEjRrjZkSgPEhiRGNOmTXMzBv+m/vGPf5wK86+pe/fuTghFeCQwIhFmzJgRNWvWLHXCkm92ffvvv7/z4YiwSGBEyeCc3W+//QoKi93QlbSGrmn48OHxXyBCIYERJfPAAw8UvJntMez//u//6j1WTvOvy65jzTXXjP75z3/Gf4UIgQRGlATbzF27dq13E/P/5ZdfPjrxxBOjRx99NHruueeiZ555Jnr66aejJ554InryySejyZMn52zSpEnuPLNHHnkkmjhxorMJEyZE48ePz9lDDz0UPfjgg84Qt/vuuy+6//773c9x48Y5Gzt2bDRmzJho8ODB0a9+9auC14ddeuml8V8iQiCBESXx0UcfRWuttVadG5h/M2MZNWpUfFZlmTJlSrTOOusUFJl99tknPkuEQAIjSoKbFzHJFxhiWtLE+eef764r/zq33HJLF5AnwiCBESXB0qbQjXvcccfFZ6QDllWFrnP99dePPv300/gskTQSGFESDQkMvpc08fDDDxe8zvXWW08CExAJjCiJxx57rOCNmzaBaWgGg8D8+9//js8SSSOBESXx+OOPF7xxTzrppPiMdNCQwOD8VY5SOCQwoiTYYi5042ZFYOSDCYsERpQEMS2Fbtx+/frFZ6QDYmQKXacEJiwSGFESBMwVunHTJjD33ntvweuUwIRFAiNKoiGBOfXUU+Mz0kFDM5h11103+uSTT+KzRNJIYERJEPpvN6t/4/bv3z8+Ix00JDBy8oZFAiNKgvwiCYxoCAmMKIlnn322YKrAWWedFZ+RDiQwlUECI0qCLGkJjGgICYwoiYaSHQcOHBifkQ4kMJVBAiNKYurUqdFyyy1X78b97W9/G5+RDhoSGEpNfPjhh/FZImkkMKIkGhIYOgukiYYEhmJUEphwSGBESTz//PPRT37yk3o3LpXk0oQEpjJIYERJvPDCC640pgRGFEICI0qiIYEZMmRIfEY6kMBUBgmMKImXXnopWnHFFSUwoiASGFESCMwKK6xQ78alBm6akMBUBgmMKIlXXnmloMAMGzYsPiMdNCQw9EaSwIRDAiNK4rXXXot++tOf1rtxL7zwwviMdOALjG8E2tF6RYRBAiNK4h//+EcdH4zduBdddFF8Rjrw68Fgq6++erTRRhtF7dq1iz777LP4LJE0EhhREhT99lMF7AZOS9M1g26Rdm34XZo3b+6ieNdee+3o1Vdfjc8SSSOBESVx0EEH5cTFFxhq4KaJ6dOnu6UcYtisWTPne+E6CRI888wz47NE0khgRFGQIEhrEl9cTGDS2Apk3rx5UcuWLd01IjDE7qy66qqus+Nqq60W9e7d2xXPmjZtmlv2mb3++uvusTfeeCN68803o7feeit6++23o3fffTeaMWOGa57/3nvvRe+//340c+bM6IMPPnD2xRdfRN9991386rWLBKaKWbRokct2psH7CSecEB155JHREUccER1++OHODj300Jxxgx188MHRgQce6Kxnz55R9+7do/333z/ab7/9on333Tfae++9oz333DPq3Llz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)" alt="Logótipo Via Sacra" class="logo-image">
+            </div>           
+            <div class="text-block">
+                <span class="section-title">INTRODUÇÃO</span>
+                <p>Senhor Jesus, olhamos para a vossa cruz e compreendemos que destes tudo por nós. Dedicamo‑Vos este tempo. Queremos passá‑lo ao pé de Vós, que rezastes desde o Getsémani até ao Calvário.</p>
+                <p>Uma coisa apenas nos pedistes: ficar convosco, vigiar. Não pedis o impossível, mas a proximidade. No entanto, quantas vezes me distanciei de Vós! Jesus, repeti novamente para mim, para nós, vossa Igreja: «Levantai-vos e orai» (Lc 22, 46).</p>
+                <p>Acordai-nos, Senhor, despertai-nos do torpor do coração, porque também hoje, sobretudo hoje, precisais da nossa oração.</p>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Irmãos convertei,<br>O vosso coração á Boa Nova.<br>Mudai de vida.<br>Sabei que Deus vos ama
+            </div>
+
+            <div class="nav-footer" style="margin-bottom: 40px;">
+                <button class="btn btn-next" onclick="goTo('estacao1')">I Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Função de Navegação Rígida para isolar as estações
+        function goTo(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(id);
+            if(target) {
+                target.classList.add('active');
+                target.scrollTop = 0;
+            }
+        }
+
+        // Script OLED corrigido para Mobile (EventListener é mais fiável)
+        const btnOled = document.getElementById('mode-toggle');
+        btnOled.addEventListener('click', function() {
+            document.body.classList.toggle('oled-mode');
+            this.innerText = document.body.classList.contains('oled-mode') ? 'MODO NORMAL' : 'MODO OLED';
+        });
+    </script>
+</body>
+</html>
+// Estações
+<section class="screen" id="estacao1">
+        <div class="card">
+            <h1>I ESTAÇÃO</h1>
+            <h2>JESUS É CONDENADO À MORTE</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho segundo São Marcos</span>
+                O Sumo Sacerdote ergueu-se no meio da assembleia e interrogou Jesus: «Não respondes nada ao que estes testemunham contra Ti?» Mas Ele continuava em silêncio e nada respondia. (Mc 14, 60-61)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Jesus, sois a vida, e acabais condenado à morte; sois a verdade, e suportastes um processo cheio de falsidades. A vossa reação é surpreendente: no momento decisivo, não falais; ficais calado. Mas o vosso silêncio é fecundo: é oração, é mansidão, é perdão, é o caminho para redimir do mal, para converter o que sofreis num dom que ofereceis.
+                <br><br>
+                Dou-me conta de Vos conhecer pouco, porque não conheço suficientemente o vosso silêncio. O vosso silêncio ensina-me que a oração não nasce dos lábios, mas dum coração que sabe permanecer à escuta.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos Dizendo: Falai ao meu coração!</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Vós que respondeis ao mal com o bem</span>
+                    <span class="response">Falai ao meu coração</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Vós que extinguis o clamor com a mansidão</span>
+                    <span class="response">Falai ao meu coração</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Vós que me tendes mais amor do que me amo eu próprio</span>
+                    <span class="response">Falai ao meu coração</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Deus é amor: Atreve-te a viver por amor. Deus é amor: Nada há a temer.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('intro')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao2')">II Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao2">
+        <div class="card">
+            <h1>II ESTAÇÃO</h1>
+            <h2>JESUS CARREGA A CRUZ</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura da Primeira Carta de São Pedro</span>
+                Subindo ao madeiro, Ele levou os nossos pecados no seu corpo, para que, mortos para o pecado, vivamos para a justiça: pelas suas chagas fomos curados. (1 Ped 2, 24)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Jesus, também nós carregamos cruzes, às vezes muito pesadas: uma doença, um acidente, a morte dum ente querido, um filho que anda perdido, o emprego que falta, uma ferida interior que não cura... O que fazer quando me sinto esmagado pela vida, e já não tenho força para reagir? A vossa resposta reside numa proposta: «Vinde a Mim, todos os que estais cansados e oprimidos, que Eu hei de aliviar-vos» (Mt 11, 28).
+                <br><br>
+                Vir a Vós… mas eu fecho-me em mim: passo e repasso, sinto pena de mim mesmo, afundo na minha condição de vítima. Mas Vós carregais aos ombros a nossa cruz, para nos tirar de cima o seu peso. Desejais que lancemos sobre Vós fadigas e preocupações, pois quereis que nos sintamos amados em Vós.
+                <br><br>
+                Obrigado, Jesus! Uno a minha cruz à vossa, trago-Vos o meu cansaço e as minhas misérias, lanço sobre Vós todos os pesos do meu coração.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Venho a Vós, Senhor</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Com a minha história</span>
+                    <span class="response">Venho a Vós, Senhor</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Com as minhas limitações e fragilidades</span>
+                    <span class="response">Venho a Vós, Senhor</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Depondo toda a confiança no vosso amor</span>
+                    <span class="response">Venho a Vós, Senhor</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Se alguém quiser seguir me, Se alguém quiser seguir-me. Tome a sua cruz e siga-me; Tome a sua cruz e siga-me.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao1')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao3')">III Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao3">
+        <div class="card">
+            <h1>III ESTAÇÃO</h1>
+            <h2>JESUS CAI PELA PRIMEIRA VEZ</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São João</span>
+                Em verdade, em verdade vos digo: se um grão de trigo, lançado à terra, não morrer, fica ele só; mas, se morrer, dá muito fruto. (Jo 12, 24).
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Caístes, Jesus! O que Vos dá a força para Vos levantardes? O olhar amoroso do Pai, que pousa sobre Vós, é a vossa força.
+                <br><br>
+                Imagino também que estejais a pensar no homem: «Isto é o meu corpo, que vai ser entregue por vós» (Lc 22, 19). O amor do Pai por Vós, e o Vosso por nós. O amor é a alavanca que Vos faz levantar e prosseguir. Porque, quem ama, não fica por terra, recomeça.
+                <br><br>
+                Jesus, peço-Vos sempre muitas coisas, mas só preciso duma: saber amar. Cairei na vida, mas, com o amor, poderei levantar-me e continuar para diante. Vós que levantais do pó e fazeis renascer a esperança, dai-me forças para amar e recomeçar.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Jesus, dai-me a força de amar e recomeçar</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando prevalece a desilusão</span>
+                    <span class="response">Jesus, dai-me a força de amar...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando sinto que não aguento mais</span>
+                    <span class="response">Jesus, dai-me a força de amar...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando me oprime o pensamento de que nada mudará</span>
+                    <span class="response">Jesus, dai-me a força de amar...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                O Senhor salvou-me, o Senhor salvou-me, o Senhor salvou-me porque me tem amor.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao2')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao4')">IV Estação</button>
+            </div>
+        </div>
+    </section>
+  <section class="screen" id="estacao4">
+        <div class="card">
+            <h1>IV ESTAÇÃO</h1>
+            <h2>JESUS ENCONTRA SUA MÃE</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São João</span>
+                Então Jesus, ao ver ali ao pé a sua mãe e o discípulo que Ele amava, disse (...) ao discípulo: «Eis a tua mãe!» E, desde aquela hora, o discípulo acolheu-a como sua. (Jo 19, 26-27)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Jesus, os vossos abandonaram-Vos, Judas traiu-Vos, Pedro renegou-Vos: ficastes sozinho com a cruz. Mas está lá a vossa mãe. No seu olhar cheio de lágrimas e de luz, encontrais a memória da ternura, que sempre Vos acolheu e sustentou. O olhar materno é o olhar da memória, que nos fundamenta no bem. Vós o sabeis e, da cruz, dais-nos a vossa própria mãe. Eis a tua mãe! Depois da Eucaristia, dais-nos Maria, a dádiva extrema antes de morrer.
+                <br><br>
+                Também o meu caminho precisa de se fundar na memória do bem. Porém, a minha oração é pobre de memória: rápida, apressada, uma lista de necessidades. Maria, abrandai a minha pressa! Ajudai-me a fazer memória: a lembrar o perdão e os prodígios de Deus, a reavivar o primeiro amor, a saborear as maravilhas da providência.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos Dizendo: Reavivai em mim a recordação do vosso amor</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando reaparecem as feridas do passado</span>
+                    <span class="response">Reavivai em mim...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando perco de vista os dons que recebi</span>
+                    <span class="response">Reavivai em mim...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando me esqueço de Vos agradecer</span>
+                    <span class="response">Reavivai em mim...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Avé Maria, gratia plena Dominus tecum Benedicta tu.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao3')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao5')">V Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao5">
+        <div class="card">
+            <h1>V ESTAÇÃO</h1>
+            <h2>JESUS É AJUDADO PELO CIRENEU</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Lucas</span>
+                Quando [os soldados] O iam conduzindo, lançaram mão de um certo Simão de Cirene, que voltava do campo, e carregaram-no com a cruz, para a levar atrás de Jesus. (Lc 23, 26)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Quantas vezes, diante dos desafios da vida, presumimos de os superar sozinhos! Como é difícil pedir ajuda, assumir a fraqueza! Não é fácil fiar-se, e menos ainda entregar-se.
+                <br><br>
+                Ao aceitares a ajuda de Simão de Cirene, ensinais-nos que amar significa socorrer os outros precisamente nisto: nas fragilidades de que se envergonham. Então as fragilidades transformam-se em oportunidades. Assim aconteceu ao Cireneu: a vossa fragilidade mudou a sua vida; e um dia dar-se-á conta de ter socorrido o seu Salvador.
+                <br><br>
+                Para que a minha vida também mude, peço-Vos: ajudai-me a baixar as defesas e deixar-me amar por Vós, precisamente no ponto onde tenho mais vergonha de mim mesmo.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Curai-me, Jesus!</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">De toda a presunção de autossuficiência</span>
+                    <span class="response">Curai-me, Jesus!</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Da relutância em entregar-Vos as minhas misérias</span>
+                    <span class="response">Curai-me, Jesus!</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Da pressa frente aos necessitados que encontro no caminho</span>
+                    <span class="response">Curai-me, Jesus!</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Onde há caridade verdadeira, aí habita Deus. (bis)
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao4')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao6')">VI Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao6">
+        <div class="card">
+            <h1>VI ESTAÇÃO</h1>
+            <h2>JESUS É CONFORTADO PELA VERÓNICA QUE LHE ENXUGA O ROSTO</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura da Segunda Carta de São Paulo aos Coríntios</span>
+                Bendito seja Deus (…) o Pai das misericórdias e o Deus de toda a consolação! Ele nos consola em toda a nossa tribulação, para que também nós possamos consolar aqueles que estão em qualquer tribulação (…). Na verdade, assim como abundam em nós os sofrimentos de Cristo, também, por meio de Cristo, é abundante a nossa consolação. (2 Cor 1, 3-5).
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Muitos acompanham o vosso caminho e proferem sentenças e condenações. O mesmo acontece hoje: basta um teclado para insultar e publicar sentenças. Uma mulher abre caminho no meio da multidão: não fala; age. Com a coragem da compaixão, encontra forma de passar por entre os soldados. O seu gesto passará à história, e é um gesto de consolação.
+                <br><br>
+                Quantas vezes invoco a vossa consolação! A Verónica lembra-me que também precisais de consolação: Vós, um Deus próximo, pedis a minha proximidade. Jesus, acendei em mim o desejo de estar convosco, de Vos adorar e consolar. E fazei que eu seja, em vosso nome, consolação para os outros.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Tornai-me testemunha da vossa consolação</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Deus de misericórdia, próximo de quem tem o coração ferido</span>
+                    <span class="response">Tornai-me testemunha...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Deus de compaixão, que detestais a indiferença</span>
+                    <span class="response">Tornai-me testemunha...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Vós que não viestes para condenar, mas para salvar</span>
+                    <span class="response">Tornai-me testemunha...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Senhor Jesus, Tu és luz do mundo: Dissipa as trevas que me querem falar. Senhor Jesus, és luz na minha alma: Saiba eu acolher o teu amor.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao5')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao7')">VII Estação</button>
+            </div>
+        </div>
+    </section>  
+<section class="screen" id="estacao7">
+        <div class="card">
+            <h1>VII ESTAÇÃO</h1>
+            <h2>JESUS CAI DE NOVO SOB O PESO DA CRUZ</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Lucas</span>
+                O filho mais novo], «levantando-se, foi ter com o pai. Quando ainda estava longe, o pai viu-o e, enchendo-se de compaixão, correu a lançar-se-lhe ao pescoço e cobriu-o de beijos. O filho disse-lhe: «Pai, pequei (…); já não mereço ser chamado teu filho». Mas o pai disse (...): «Este meu filho estava morto e reviveu, estava perdido e foi encontrado». (Lc 15, 20-22.24)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                A cruz pesa! Carrega o peso da derrota, do fracasso, da humilhação. Compreendo-o quando me sinto esmagado pelos erros e incompreensões. Mas há pior. Dou-me conta de tocar o fundo, quando volto a cair na mesma falta, no mesmo pecado, quando me escandalizo dos outros e depois apercebo-me de que não sou diferente.
+                <br><br>
+                Caístes várias vezes, para estar perto de mim quando volto a cair. Obrigado porque volto a cair tantas vezes e me perdoais infinitas vezes. Gravai no meu coração a certeza mais importante: que só me levanto verdadeiramente quando Vós me levantais, e me libertais dos pecados. Porque a vida não recomeça das minhas palavras, mas do vosso perdão.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Levantai-me, Jesus!</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando, paralisado pela reincidência, sinto tristeza e desânimo</span>
+                    <span class="response">Levantai-me, Jesus!</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando me sinto tentado a perder a esperança</span>
+                    <span class="response">Levantai-me, Jesus!</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando esqueço que a minha força está no vosso perdão</span>
+                    <span class="response">Levantai-me, Jesus!</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Jerusalém, Jerusalém! Pelas ruas de Jerusalém! Sobe Cristo com a cruz; Pelas ruas de Jerusalém, sobe Cristo com a Cruz.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao6')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao8')">VIII Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao8">
+        <div class="card">
+            <h1>VIII ESTAÇÃO</h1>
+            <h2>JESUS ENCONTRA AS MULHERES DE JERUSALÉM</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Lucas</span>
+                Seguiam Jesus uma grande multidão de povo e umas mulheres que batiam no peito e se lamentavam por Ele (Lc 23, 27).
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Jesus, quem é que Vos segue até ao fim pelo caminho da cruz? Não os poderosos, nem os espetadores, mas as pessoas simples, grandes aos vossos olhos e pequenas aos do mundo. São as mulheres a quem destes esperança: não têm voz, mas fazem-se ouvir. As mulheres que encontrais batem no peito e choram por Vós. Não choram por si mesmas, mas por Vós; choram pelo mal e o pecado do mundo. A sua oração feita de lágrimas chega ao vosso coração.
+                <br><br>
+                E a minha oração sabe chorar? Comovo-me diante de Vós, crucificado por mim? Choro as minhas falsidades? À vista das tragédias do mundo, o meu coração enternece-se? Como reajo à loucura da guerra, a rostos de crianças que já não sabem sorrir e mães que não têm mais lágrimas para derramar?
+                <br><br>
+                Vós chorastes por Jerusalém, chorastes pela dureza do nosso coração. Sacudi-me no meu íntimo, dai-me a graça de chorar rezando e de rezar chorando.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Jesus, enternecei o meu coração endurecido</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Vós que conheceis os segredos do coração</span>
+                    <span class="response">Jesus, enternecei...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Vós que enxugastes com o perdão as lágrimas de Pedro</span>
+                    <span class="response">Jesus, enternecei...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Vós que transformais o choro em canto</span>
+                    <span class="response">Jesus, enternecei...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Ubi caritas et amor, ubi caritas Deus ibi est.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao7')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao9')">IX Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao9">
+        <div class="card">
+            <h1>IX ESTAÇÃO</h1>
+            <h2>JESUS É DESPOJADO DAS SUAS VESTES</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Mateus</span>
+                Senhor, quando foi que Te vimos com fome e Te demos de comer, ou com sede e Te demos de beber? Quando Te vimos peregrino e Te recolhemos, ou nu e Te vestimos? E quando Te vimos doente ou na prisão, e fomos visitar-Te?» E o Rei vai dizer-lhes, em resposta: «Em verdade vos digo: Sempre que fizestes isto a um destes meus irmãos mais pequeninos, a Mim mesmo o fizestes» (Mt 25, 37-40).
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Jesus, agora compreendo a insistência em identificar-Vos com os necessitados: És levado até fora da cidade para ser crucificado; estais nu, despojado das vestes, doente e ferido; sedento na cruz e faminto de amor.
+                <br><br>
+                Senhor, fazei que Vos veja nos atribulados e veja os atribulados em Vós, porque estais neles: em quem é despojado de dignidade e humilhado.
+                <br><br>
+                Olho para Vós, despojado das vestes, e compreendo que me convidais a despojar-me de tantas exterioridades. Jesus crucificado em tantos irmãos crucificados. Dai-me a graça de o compreender agora, para não ser encontrado despojado de amor quando me apresentar diante de Vós.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Despojai-me, Senhor Jesus!</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Do apego às aparências</span>
+                    <span class="response">Despojai-me...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">De julgar que não toca a mim socorrer os outros</span>
+                    <span class="response">Despojai-me...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Da convicção de que a vida corre bem, se eu estiver bem</span>
+                    <span class="response">Despojai-me...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Jesus Cristo amou-me. Jesus Cristo amou-me E entregou-se por mim, E entregou-se por mim.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao8')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao10')">X Estação</button>
+            </div>
+        </div>
+    </section>
+<section class="screen" id="estacao10">
+        <div class="card">
+            <h1>X ESTAÇÃO</h1>
+            <h2>JESUS É PREGADO NA CRUZ</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Lucas</span>
+                Quando chegaram ao lugar chamado Calvário, crucificaram-No a Ele e aos malfeitores, um à direita e outro à esquerda. Jesus dizia: «Perdoa-lhes, Pai, porque não sabem o que fazem». (Lc 23, 33-34)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Trespassam-Vos braços e pés com cravos; mas é agora, quando o sofrimento físico é mais atroz, que brota dos vossos lábios a oração impossível: «Perdoa-lhes, Pai…». Convosco, também eu posso encontrar a coragem de escolher o perdão, que liberta o coração e relança a vida. E, Senhor, vais ainda mais além, quereis também desculpar-nos diante do Pai: não sabem o que fazem. Assumis a nossa defesa, intercedeis por nós.
+                <br><br>
+                Jesus, que eu reze não só por mim e pelos meus entes queridos, mas também por quem não me quer bem e me faz mal; que eu reze, segundo os desejos do vosso coração, por quem vive longe de Vós; que eu reze para reparar e interceder em favor de quantos, ignorando-Vos, não conhecem a alegria de Vos amar e ser perdoados por Vós.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Pai, tende misericórdia de nós e do mundo inteiro</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Pela dolorosa paixão de Jesus</span>
+                    <span class="response">Pai, tende misericórdia...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Pelo seu perdão na cruz</span>
+                    <span class="response">Pai, tende misericórdia...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Por quantos perdoam por vosso amor</span>
+                    <span class="response">Pai, tende misericórdia...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                A misericórdia do Senhor, para sempre cantarei (bis)
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao9')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao11')">XI Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao11">
+        <div class="card">
+            <h1>XI ESTAÇÃO</h1>
+            <h2>JESUS GRITA O SEU ABANDONO</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Mateus</span>
+                Desde o meio-dia até às três da tarde, as trevas envolveram toda a terra. Cerca das três horas da tarde, Jesus clamou com voz forte: «Eli, Eli, lemà sabactàni?», isto é, «Meu Deus, meu Deus, porque Me abandonaste?» (Mt 27, 45-46)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Gritais ao Pai o vosso abandono. Vós, Deus do céu, não trovejais respostas, mas perguntais porquê? No auge da Paixão, sentis a distância do Pai; e já nem O chamais Pai – como sempre –, mas Deus, como se já não conseguísseis identificar o seu rosto. Por que é que sucede isto?
+                <br><br>
+                Fizeste-lo por mim, para que, quando vir apenas escuridão, não me sinta só, mas acredite que estais lá comigo. Eis o que se deve fazer nas tempestades da vida: gritar por Vós. Glória a Vós, Senhor Jesus, porque não fugistes da minha confusão.
+                <br><br>
+                Na escuridão dos meus porquês, encontro-Vos a Vós, Jesus, luz na noite. E, no grito de tantas pessoas sozinhas e excluídas, oprimidas e abandonadas, revejo-Vos a Vós, meu Deus: fazei que Vos reconheça e Vos ame.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Jesus, fazei que Vos reconheça e Vos ame</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Nas crianças não nascidas e nas abandonadas</span>
+                    <span class="response">Jesus, fazei que Vos...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Nos jovens à espera de alguém que ouça o seu grito de dor</span>
+                    <span class="response">Jesus, fazei que Vos...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Nos inúmeros idosos descartados</span>
+                    <span class="response">Jesus, fazei que Vos...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Lembra-te de mim Senhor, Lembra-te de mim. Quando estiveres no teu Reino, Lembra-te de mim Senhor.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao10')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao12')">XII Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao12">
+        <div class="card">
+            <h1>XII ESTAÇÃO</h1>
+            <h2>JESUS MORRE ENTREGANDO-SE AO PAI E DANDO AO BOM LADRÃO O PARAÍSO</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Lucas</span>
+                Um dos malfeitores crucificado] disse: «Jesus, lembra-Te de mim quando estiveres no teu Reino». Ele respondeu-lhe: «En verdade te digo: hoje estarás comigo no Paraíso». (…) Dando um forte grito, Jesus exclamou: «Pai, nas tuas mãos entrego o meu espírito». Dito isto, expirou. (Lc 23, 42-43.46)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Jesus, um malfeitor no Paraíso!!! Ele confia-Se a Vós, e Vós O confiais juntamente convosco ao Pai. Deus do impossível, dum ladrão fazeis um santo. Mais: no Calvário, mudais o curso da história. Fazeis da cruz, emblema do suplício, o ícone do amor. Transformais as trevas em luz e o próprio túmulo – última estação da vida – no ponto de partida da esperança.
+                <br><br>
+                Realizais estas inversões, nunca sem nós! “Jesus, lembra-Te de mim”: esta oração sincera permitiu-Vos fazer maravilhas na vida daquele malfeitor. Às vezes penso que a minha oração não seja ouvida, mas o essencial é perseverar, ter constância, dizer: «Jesus, lembrai-Vos de mim». Lembrai-Vos de mim e o meu mal já não será última paragem, mas um recomeço.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Jesus, lembrai-Vos de mim</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando a esperança se desvanece e reina a desilusão</span>
+                    <span class="response">Jesus, lembrai-Vos...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando perco de vista a grandeza do vosso amor</span>
+                    <span class="response">Jesus, lembrai-Vos...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando penso que minha oração seja inútil</span>
+                    <span class="response">Jesus, lembrai-Vos...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Foi por amor que um dia alguém numa cruz deu a vida por mim. Passou na terra fazendo o bem e amou; amou até ao fim.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao11')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao13')">XIII Estação</button>
+            </div>
+        </div>
+    </section>
+    <section class="screen" id="estacao13">
+        <div class="card">
+            <h1>XIII ESTAÇÃO</h1>
+            <h2>JESUS É DESCIDO DA CRUZ E POSTO NOS BRAÇOS DE MARIA</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Lucas</span>
+                Simeão disse a Maria, sua mãe: «Este menino está aqui para queda e ressurgimento de muitos em Israel e para ser sinal de contradição; uma espada trespassará a tua alma». (Lc 2, 34-35)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                Maria, depois do vosso «sim», o Verbo fez-Se carne no vosso ventre; agora, aquele menino que trazíeis nos braços é um cadáver no vosso colo. No momento mais doloroso, resplandece a vossa oferta: uma espada trespassa-Vos a alma e a vossa oração continua a ser um «sim» a Deus.
+                <br><br>
+                Nós somos pobres de «sins e ricos de «ses». Ao perguntar-nos perpetuamente pelo porquê das coisas, sentimos dificuldade em viver o presente com amor. 
+                <br><br>
+                Mãe de Jesus, forte na fé, acreditais que o sofrimento, permeado pelo amor, produz frutos de salvação. Acolhei-me nos vossos braços e debruçai-Vos sobre as minhas feridas. Ajudai-me a dizer «sim» a Deus. Mãe de piedade, tomai-me pela mão.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Tomai-me pela mão, Maria</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando vou adiando e não tenho coragem de dizer «sim» a Deus</span>
+                    <span class="response">Tomai-me pela mão...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando sou indulgente comigo mesmo e inflexível com os outros</span>
+                    <span class="response">Tomai-me pela mão...</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Quando quero que a Igreja e o mundo mudem, mas eu não mudo</span>
+                    <span class="response">Tomai-me pela mão...</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Vitória tu reinarás, Ó Cruz, tu nos salvarás! Vitória, tu reinarás! Ó Cruz, tu nos salvarás!
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao12')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('estacao14')">XIV Estação</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="estacao14">
+        <div class="card">
+            <h1>XIV ESTAÇÃO</h1>
+            <h2>JESUS É COLOCADO NO TÚMULO DE JOSÉ DE ARIMATEIA</h2>
+            <p>
+                <span class="role">Presidente:</span> Nós Vos adoramos e bendizemos, ó Jesus.<br>
+                <span class="role">Todos:</span> Que remistes o mundo pela vossa Santa Cruz.
+            </p>
+            
+            <div class="text-block">
+                <span class="section-title">Leitura do Evangelho Segundo São Mateus</span>
+                Ao cair da tarde, veio um homem rico de Arimateia, chamado José, que também se tornara discípulo de Jesus. Foi ter com Pilatos e pediu-lhe o corpo de Jesus. José tomou o corpo, envolveu-o num lençol limpo e depositou-o num túmulo novo, talhado na rocha. (Mt 27, 57-60)
+            </div>
+
+            <div class="text-block">
+                <span class="section-title">Meditação</span>
+                José de Arimateia, tomas o corpo Jesus, sem saber que um sonho impossível e maravilhoso se vai realizar lá mesmo, no túmulo que deste a Cristo. Recordas-nos que a oração insistente dá fruto e atravessa até a escuridão da morte; que o amor não fica sem resposta, mas oferece novos começos. O teu túmulo – único na história – será fonte de vida.
+                <br><br>
+                E eu, o que dou de novo a Jesus nesta Páscoa? Um pouco de tempo para estar com Ele? Um pouco de amor para os outros? Os meus medos e as minhas misérias sepultadas, que Cristo espera lhe sejam oferecidos como fizeste tu com o túmulo? Será verdadeiramente Páscoa se der algo de meu Àquele que por mim deu a sua vida: pois é dando que se recebe; a vida é encontrada quando se perde, e é possuída quando se dá.
+            </div>
+
+            <div class="prayer-section">
+                <span class="prayer-instruction">Rezemos dizendo: Tende Piedade, Senhor</span>
+                <div class="invocation-row">
+                    <span class="invocation-text">De mim, preguiçoso para me converter</span>
+                    <span class="response">Tende Piedade, Senhor</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">De mim, que gosto muito de receber e pouco de dar</span>
+                    <span class="response">Tende Piedade, Senhor</span>
+                </div>
+                <div class="invocation-row">
+                    <span class="invocation-text">Do nosso mundo, infestado pelos túmulos do egoísmo</span>
+                    <span class="response">Tende Piedade, Senhor</span>
+                </div>
+            </div>
+
+            <div class="chant">
+                <strong>Cântico:</strong><br>
+                Cantarei ao Senhor enquanto viver, louvarei ao meu Deus enquanto existir. N’Ele encontro a minha alegria.
+            </div>
+
+            <div class="nav-footer">
+                <button class="btn btn-prev" onclick="goTo('estacao13')">Anterior</button>
+                <button class="btn btn-next" onclick="goTo('conclusao')">Conclusão</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="screen" id="conclusao">
+        <div class="card">
+            <h1>CONCLUSÃO</h1>
+            <div class="text-block">
+                <p><strong>Oremos</strong></p>
+                <p>Senhor Jesus, Palavra eterna do Pai, por nós fizeste-Te silêncio. E, no silêncio que nos guia até ao teu sepulcro, há ainda uma palavra que Te queremos dizer repassando o caminho da Via-Sacra.</p>
+                <p>Obrigado, Senhor Jesus, pela luz que acendeste nas nossas noites e, reconciliando todas as divisões, tornaste-nos a todos irmãos, filhos do mesmo Pai que está nos céus:</p>
+                
+                <p style="text-align: center; font-weight: bold; font-size: 1.2rem; margin: 1.5rem 0; color: var(--gold);">Pai Nosso…</p>
+                
+                <p style="font-size: 0.8rem; text-align: center; color: var(--text-soft); margin-top: 2rem;">
+                    (Via Sacra do Coliseu de Roma, Sexta Feira da Paixão do Ano 2024, Adaptado)
+                </p>
+            </div>
+
+              <div class="logo-container">
+                <img src="logo_coracao_cruz.png" alt="Logótipo SLJ" class="logo-image">
+            </div>
+
+            <div style="text-align: center; font-size: 0.95rem; line-height: 1.6;">
+                    <p>A <strong>Unidade Pastoral Conímbriga</strong> e o <strong>Serviço Local da Juventude Conímbriga</strong>, enquanto dinamizadores desta iniciativa, agradecem a todos os que a tornaram possível, nomeadamente:</p>
+                    
+                    <p>À <strong>Catequese de Vila Seca</strong>, nas pessoas de <strong>José Cura</strong> e <strong>Ana Mafalda</strong>;<br>
+                    À <strong>Junta de Freguesia de Vila Seca e Bendafé</strong>, pelo apoio logístico.</p>
+                    
+                    <p style="margin-top: 1.5rem; font-style: italic; color: var(--gold);">A todos, o nosso profundo agradecimento.</p>
+                </div>
+            <div class="nav-footer">
+                <button class="btn btn-next" onclick="goTo('intro')">Regressar ao Início</button>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
